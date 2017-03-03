@@ -35,6 +35,7 @@ import org.jetbrains.kotlin.codegen.intrinsics.IntrinsicArrayConstructorsKt;
 import org.jetbrains.kotlin.codegen.state.GenerationState;
 import org.jetbrains.kotlin.codegen.state.KotlinTypeMapper;
 import org.jetbrains.kotlin.codegen.when.WhenByEnumsMapping;
+import org.jetbrains.kotlin.config.JvmTarget;
 import org.jetbrains.kotlin.descriptors.*;
 import org.jetbrains.kotlin.fileClasses.FileClasses;
 import org.jetbrains.kotlin.fileClasses.JvmFileClassesProvider;
@@ -47,6 +48,8 @@ import org.jetbrains.kotlin.psi.KtFile;
 import org.jetbrains.kotlin.resolve.DescriptorToSourceUtils;
 import org.jetbrains.kotlin.resolve.jvm.AsmTypes;
 import org.jetbrains.kotlin.resolve.jvm.JvmClassName;
+import org.jetbrains.kotlin.resolve.jvm.checkers.InlinePlatformCompatibilityChecker;
+import org.jetbrains.kotlin.resolve.jvm.diagnostics.ErrorsJvm;
 import org.jetbrains.kotlin.types.KotlinType;
 import org.jetbrains.kotlin.util.OperatorNameConventions;
 import org.jetbrains.org.objectweb.asm.*;
@@ -153,10 +156,10 @@ public class InlineCodegenUtil {
 
     public static void assertVersionNotGreaterThanGeneratedOne(int version, String internalName, @NotNull GenerationState state) {
         // TODO: report a proper diagnostic
-        if (version > state.getClassFileVersion() && !"true".equals(System.getProperty("kotlin.skip.bytecode.version.check"))) {
+        if (version > state.getClassFileVersion() && InlinePlatformCompatibilityChecker.Companion.doCheck()) {
             throw new UnsupportedOperationException(
-                    "Cannot inline bytecode of class " + internalName + " which has version " + version + ". " +
-                    "This compiler can only inline Java 1.6 bytecode (version " + Opcodes.V1_6 + ")"
+                    "Cannot inline bytecode of class " + internalName + " which has built with " + JvmTarget.Companion.getDescription(version) + " into bytecode that is being built with " +
+                    JvmTarget.Companion.getDescription(state.getClassFileVersion()) + ". Please specify proper ''-jvm-target'' option"
             );
         }
     }
